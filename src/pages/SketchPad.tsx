@@ -28,63 +28,76 @@ const SketchPad = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const context = canvas.getContext('2d');
-    if (!context) return;
-
-    // Set canvas size
+    // Set canvas size to match container
     const resizeCanvas = () => {
-      const parent = canvas.parentElement;
-      if (!parent) return;
+      const container = canvas.parentElement;
+      if (!container) return;
 
-      canvas.width = parent.clientWidth;
-      canvas.height = parent.clientHeight;
-
-      // Restore drawing settings after resize
-      context.lineCap = 'round';
-      context.lineJoin = 'round';
-      context.strokeStyle = options.color;
-      context.lineWidth = options.width;
+      canvas.width = container.clientWidth;
+      canvas.height = container.clientHeight;
     };
 
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
     return () => window.removeEventListener('resize', resizeCanvas);
-  }, [options]);
+  }, []);
 
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const getCanvasPoint = (event: MouseEvent | TouchEvent): Point | null => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return null;
 
     const rect = canvas.getBoundingClientRect();
-    const point = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    };
+    let x, y;
+
+    if (event instanceof MouseEvent) {
+      x = event.clientX - rect.left;
+      y = event.clientY - rect.top;
+    } else {
+      // Touch event
+      const touch = event.touches[0];
+      x = touch.clientX - rect.left;
+      y = touch.clientY - rect.top;
+    }
+
+    return { x, y };
+  };
+
+  const startDrawing = (event: React.MouseEvent | React.TouchEvent) => {
+    event.preventDefault();
+    const point = getCanvasPoint(
+      event.nativeEvent as MouseEvent | TouchEvent
+    );
+    if (!point) return;
 
     setIsDrawing(true);
     setLastPoint(point);
   };
 
-  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || !lastPoint) return;
+  const draw = (event: React.MouseEvent | React.TouchEvent) => {
+    event.preventDefault();
+    if (!isDrawing) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const context = canvas.getContext('2d');
-    if (!context) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx || !lastPoint) return;
 
-    const rect = canvas.getBoundingClientRect();
-    const currentPoint = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    };
+    const currentPoint = getCanvasPoint(
+      event.nativeEvent as MouseEvent | TouchEvent
+    );
+    if (!currentPoint) return;
 
-    context.beginPath();
-    context.moveTo(lastPoint.x, lastPoint.y);
-    context.lineTo(currentPoint.x, currentPoint.y);
-    context.stroke();
+    ctx.beginPath();
+    ctx.strokeStyle = options.color;
+    ctx.lineWidth = options.width;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    ctx.moveTo(lastPoint.x, lastPoint.y);
+    ctx.lineTo(currentPoint.x, currentPoint.y);
+    ctx.stroke();
 
     setLastPoint(currentPoint);
   };
@@ -98,17 +111,17 @@ const SketchPad = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const context = canvas.getContext('2d');
-    if (!context) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     toast({
-      title: 'Canvas cleared',
-      description: 'The drawing has been cleared.',
+      title: 'Canvas Cleared',
+      description: 'The sketch pad has been cleared.',
     });
   };
 
-  const saveDrawing = () => {
+  const saveCanvas = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
@@ -120,111 +133,99 @@ const SketchPad = () => {
       link.click();
 
       toast({
-        title: 'Drawing saved',
-        description: 'Your drawing has been saved as PNG.',
+        title: 'Sketch Saved',
+        description: 'Your sketch has been downloaded successfully.',
       });
     } catch (error) {
       toast({
         title: 'Error',
-        description: 'Failed to save the drawing.',
+        description: 'Failed to save the sketch. Please try again.',
         variant: 'destructive',
       });
     }
   };
 
-  const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const context = canvas.getContext('2d');
-    if (!context) return;
-
-    const newColor = e.target.value;
-    context.strokeStyle = newColor;
-    setOptions((prev) => ({ ...prev, color: newColor }));
-  };
-
-  const handleWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const context = canvas.getContext('2d');
-    if (!context) return;
-
-    const newWidth = parseInt(e.target.value);
-    context.lineWidth = newWidth;
-    setOptions((prev) => ({ ...prev, width: newWidth }));
-  };
-
   return (
     <div className="container mx-auto p-4">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Sketchpad</h1>
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">Sketch Pad</h1>
         <p className="text-muted-foreground">
-          Draw and visualize your ideas. Use the tools below to customize your
-          drawing.
+          Use this space to sketch out your ideas or take visual notes.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+      <div className="mb-4 flex flex-wrap gap-4">
         <Card className="p-4">
-          <h3 className="font-semibold mb-2">Color</h3>
-          <input
-            type="color"
-            value={options.color}
-            onChange={handleColorChange}
-            className="w-full h-10"
-          />
-        </Card>
-
-        <Card className="p-4">
-          <h3 className="font-semibold mb-2">Line Width</h3>
-          <input
-            type="range"
-            min="1"
-            max="20"
-            value={options.width}
-            onChange={handleWidthChange}
-            className="w-full"
-          />
-          <div className="text-sm text-muted-foreground mt-1">
-            {options.width}px
+          <div className="flex items-center gap-4">
+            <label htmlFor="color" className="text-sm font-medium">
+              Color:
+            </label>
+            <input
+              type="color"
+              id="color"
+              value={options.color}
+              onChange={(e) =>
+                setOptions((prev) => ({ ...prev, color: e.target.value }))
+              }
+              className="h-8 w-12 cursor-pointer"
+            />
           </div>
         </Card>
 
-        <Card className="p-4 flex items-center justify-center">
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={clearCanvas}
-          >
-            Clear Canvas
-          </Button>
+        <Card className="p-4">
+          <div className="flex items-center gap-4">
+            <label htmlFor="width" className="text-sm font-medium">
+              Width:
+            </label>
+            <input
+              type="range"
+              id="width"
+              min="1"
+              max="20"
+              value={options.width}
+              onChange={(e) =>
+                setOptions((prev) => ({
+                  ...prev,
+                  width: parseInt(e.target.value),
+                }))
+              }
+              className="w-32"
+            />
+            <span className="text-sm">{options.width}px</span>
+          </div>
         </Card>
 
-        <Card className="p-4 flex items-center justify-center">
-          <Button className="w-full" onClick={saveDrawing}>
-            Save Drawing
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={clearCanvas}>
+            Clear
           </Button>
-        </Card>
+          <Button onClick={saveCanvas}>Save</Button>
+        </div>
       </div>
 
-      <Card className="w-full aspect-video relative overflow-hidden">
+      <Card className="aspect-video w-full overflow-hidden">
         <canvas
           ref={canvasRef}
+          className="h-full w-full touch-none"
           onMouseDown={startDrawing}
           onMouseMove={draw}
           onMouseUp={stopDrawing}
           onMouseOut={stopDrawing}
-          className="w-full h-full cursor-crosshair"
+          onTouchStart={startDrawing}
+          onTouchMove={draw}
+          onTouchEnd={stopDrawing}
         />
       </Card>
 
-      <div className="mt-4 text-sm text-muted-foreground">
-        <p>
-          Tip: Click and drag to draw. Use the color picker and line width slider
-          to customize your drawing. Don't forget to save your work!
-        </p>
+      <div className="mt-4">
+        <h2 className="mb-2 text-xl font-semibold">Tips:</h2>
+        <ul className="list-inside list-disc space-y-1 text-muted-foreground">
+          <li>Click and drag to draw</li>
+          <li>Use the color picker to change colors</li>
+          <li>Adjust the line width using the slider</li>
+          <li>Click 'Clear' to start over</li>
+          <li>Click 'Save' to download your sketch</li>
+        </ul>
       </div>
     </div>
   );

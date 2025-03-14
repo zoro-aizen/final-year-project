@@ -11,12 +11,13 @@ interface Post {
     avatar: string;
   };
   content: string;
+  timestamp: string;
   likes: number;
   comments: number;
-  timestamp: string;
+  tags: string[];
 }
 
-const mockPosts: Post[] = [
+const MOCK_POSTS: Post[] = [
   {
     id: '1',
     author: {
@@ -25,9 +26,10 @@ const mockPosts: Post[] = [
     },
     content:
       'Just completed the Frontend Development roadmap! The React section was particularly helpful. Anyone else working on this path?',
+    timestamp: '2 hours ago',
     likes: 24,
     comments: 8,
-    timestamp: '2 hours ago',
+    tags: ['frontend', 'react', 'webdev'],
   },
   {
     id: '2',
@@ -36,16 +38,17 @@ const mockPosts: Post[] = [
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jane',
     },
     content:
-      'Looking for study buddies for the Machine Learning roadmap. Currently working on neural networks!',
+      'Starting my journey with Machine Learning. Any recommendations for good resources besides the roadmap?',
+    timestamp: '4 hours ago',
     likes: 15,
     comments: 12,
-    timestamp: '4 hours ago',
+    tags: ['machinelearning', 'ai', 'python'],
   },
   // Add more mock posts as needed
 ];
 
 const Community = () => {
-  const [posts, setPosts] = useState<Post[]>(mockPosts);
+  const [posts, setPosts] = useState<Post[]>(MOCK_POSTS);
   const [newPost, setNewPost] = useState('');
   const { toast } = useToast();
 
@@ -66,9 +69,10 @@ const Community = () => {
         avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=You',
       },
       content: newPost,
+      timestamp: 'Just now',
       likes: 0,
       comments: 0,
-      timestamp: 'Just now',
+      tags: extractTags(newPost),
     };
 
     setPosts([post, ...posts]);
@@ -77,6 +81,11 @@ const Community = () => {
       title: 'Success',
       description: 'Your post has been created!',
     });
+  };
+
+  const extractTags = (content: string): string[] => {
+    const tags = content.match(/#[\w]+/g);
+    return tags ? tags.map((tag) => tag.slice(1)) : [];
   };
 
   const handleLike = (postId: string) => {
@@ -90,89 +99,101 @@ const Community = () => {
   return (
     <div className="container mx-auto p-4">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Community</h1>
+        <h1 className="text-3xl font-bold">Community</h1>
         <p className="text-muted-foreground">
-          Connect with fellow learners, share your progress, and get help from the
-          community.
+          Connect with fellow learners, share your progress, and get help.
         </p>
       </div>
 
-      <Card className="p-4 mb-6">
-        <div className="flex items-start space-x-4">
-          <img
-            src="https://api.dicebear.com/7.x/avataaars/svg?seed=You"
-            alt="Your avatar"
-            className="w-10 h-10 rounded-full"
+      <Card className="mb-8 p-4">
+        <div className="mb-4">
+          <textarea
+            className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            placeholder="Share your thoughts or ask a question... Use #tags to categorize your post"
+            value={newPost}
+            onChange={(e) => setNewPost(e.target.value)}
           />
-          <div className="flex-1">
-            <Input
-              placeholder="Share your thoughts or ask a question..."
-              value={newPost}
-              onChange={(e) => setNewPost(e.target.value)}
-              className="mb-2"
-            />
-            <Button onClick={handleCreatePost}>Post</Button>
-          </div>
+        </div>
+        <div className="flex justify-between">
+          <p className="text-sm text-muted-foreground">
+            Use #tags to categorize your post
+          </p>
+          <Button onClick={handleCreatePost}>Post</Button>
         </div>
       </Card>
+
+      <div className="mb-6 flex items-center justify-between">
+        <Input
+          className="max-w-xs"
+          placeholder="Search posts..."
+          type="search"
+        />
+        <div className="space-x-2">
+          <Button variant="outline" size="sm">
+            Latest
+          </Button>
+          <Button variant="outline" size="sm">
+            Popular
+          </Button>
+          <Button variant="outline" size="sm">
+            Following
+          </Button>
+        </div>
+      </div>
 
       <div className="space-y-4">
         {posts.map((post) => (
           <Card key={post.id} className="p-4">
-            <div className="flex items-start space-x-4">
-              <img
-                src={post.author.avatar}
-                alt={`${post.author.name}'s avatar`}
-                className="w-10 h-10 rounded-full"
-              />
-              <div className="flex-1">
-                <div className="flex items-center justify-between">
+            <div className="mb-4 flex items-start justify-between">
+              <div className="flex items-center space-x-3">
+                <img
+                  src={post.author.avatar}
+                  alt={post.author.name}
+                  className="h-10 w-10 rounded-full"
+                />
+                <div>
                   <h3 className="font-semibold">{post.author.name}</h3>
-                  <span className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     {post.timestamp}
-                  </span>
-                </div>
-                <p className="mt-2 text-foreground">{post.content}</p>
-                <div className="mt-4 flex items-center space-x-4">
-                  <button
-                    onClick={() => handleLike(post.id)}
-                    className="flex items-center space-x-1 text-sm text-muted-foreground hover:text-primary"
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                      />
-                    </svg>
-                    <span>{post.likes}</span>
-                  </button>
-                  <button className="flex items-center space-x-1 text-sm text-muted-foreground hover:text-primary">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-5 w-5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                      />
-                    </svg>
-                    <span>{post.comments}</span>
-                  </button>
+                  </p>
                 </div>
               </div>
+              <Button variant="ghost" size="icon">
+                <span className="sr-only">More options</span>
+                {/* Add icon here */}
+              </Button>
+            </div>
+
+            <p className="mb-4 whitespace-pre-wrap">{post.content}</p>
+
+            <div className="mb-4 flex flex-wrap gap-2">
+              {post.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full bg-secondary px-3 py-1 text-sm text-secondary-foreground"
+                >
+                  #{tag}
+                </span>
+              ))}
+            </div>
+
+            <div className="flex items-center space-x-4 border-t pt-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleLike(post.id)}
+              >
+                {/* Add like icon */}
+                <span className="ml-2">{post.likes} Likes</span>
+              </Button>
+              <Button variant="ghost" size="sm">
+                {/* Add comment icon */}
+                <span className="ml-2">{post.comments} Comments</span>
+              </Button>
+              <Button variant="ghost" size="sm">
+                {/* Add share icon */}
+                Share
+              </Button>
             </div>
           </Card>
         ))}

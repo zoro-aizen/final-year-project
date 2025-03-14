@@ -29,17 +29,7 @@ const Profile = () => {
     bio: user?.bio || '',
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSave = async () => {
     try {
       await updateUser(formData);
       setIsEditing(false);
@@ -58,139 +48,138 @@ const Profile = () => {
 
   return (
     <div className="container mx-auto p-4">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold">Profile</h1>
+        <p className="text-muted-foreground">
+          Manage your account settings and view your progress
+        </p>
+      </div>
+
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Profile Information */}
-        <Card className="p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">Profile Information</h2>
-            <Button
-              variant="outline"
-              onClick={() => setIsEditing(!isEditing)}
-            >
-              {isEditing ? 'Cancel' : 'Edit Profile'}
-            </Button>
-          </div>
-
-          {isEditing ? (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium mb-1"
-                >
-                  Name
-                </label>
-                <Input
-                  id="name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
+        <div className="space-y-6">
+          <Card className="p-6">
+            <div className="mb-6 flex items-center justify-between">
+              <div className="flex items-center space-x-4">
+                <img
+                  src={user?.avatar || 'https://api.dicebear.com/7.x/avataaars/svg'}
+                  alt="Profile"
+                  className="h-16 w-16 rounded-full"
                 />
+                <div>
+                  <h2 className="text-2xl font-bold">{user?.name}</h2>
+                  <p className="text-muted-foreground">{user?.email}</p>
+                </div>
               </div>
-
-              <div>
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium mb-1"
-                >
-                  Email
-                </label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="bio"
-                  className="block text-sm font-medium mb-1"
-                >
-                  Bio
-                </label>
-                <Input
-                  id="bio"
-                  name="bio"
-                  value={formData.bio}
-                  onChange={handleChange}
-                />
-              </div>
-
-              <Button type="submit">Save Changes</Button>
-            </form>
-          ) : (
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">
-                  Name
-                </h3>
-                <p className="mt-1">{user?.name}</p>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">
-                  Email
-                </h3>
-                <p className="mt-1">{user?.email}</p>
-              </div>
-
-              <div>
-                <h3 className="text-sm font-medium text-muted-foreground">
-                  Bio
-                </h3>
-                <p className="mt-1">{user?.bio || 'No bio added yet.'}</p>
-              </div>
-            </div>
-          )}
-        </Card>
-
-        {/* Statistics */}
-        <Card className="p-6">
-          <h2 className="text-2xl font-bold mb-6">Your Progress</h2>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="p-4 bg-primary/10 rounded-lg">
-              <h3 className="text-sm font-medium text-muted-foreground">
-                Completed Roadmaps
-              </h3>
-              <p className="text-2xl font-bold mt-1">
-                {mockStats.completedRoadmaps}
-              </p>
+              <Button
+                variant="outline"
+                onClick={() => setIsEditing(!isEditing)}
+              >
+                {isEditing ? 'Cancel' : 'Edit'}
+              </Button>
             </div>
 
-            <div className="p-4 bg-primary/10 rounded-lg">
-              <h3 className="text-sm font-medium text-muted-foreground">
-                In Progress
-              </h3>
-              <p className="text-2xl font-bold mt-1">
-                {mockStats.inProgressRoadmaps}
-              </p>
-            </div>
+            {isEditing ? (
+              <div className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="name"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    Name
+                  </label>
+                  <Input
+                    id="name"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="email"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    Email
+                  </label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="bio"
+                    className="text-sm font-medium text-foreground"
+                  >
+                    Bio
+                  </label>
+                  <textarea
+                    id="bio"
+                    className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    value={formData.bio}
+                    onChange={(e) =>
+                      setFormData({ ...formData, bio: e.target.value })
+                    }
+                  />
+                </div>
+                <Button onClick={handleSave}>Save Changes</Button>
+              </div>
+            ) : (
+              <p className="text-muted-foreground">{formData.bio}</p>
+            )}
+          </Card>
 
-            <div className="p-4 bg-primary/10 rounded-lg">
-              <h3 className="text-sm font-medium text-muted-foreground">
-                Total Hours
-              </h3>
-              <p className="text-2xl font-bold mt-1">
-                {mockStats.totalHoursLearned}
-              </p>
+          <Card className="p-6">
+            <h3 className="mb-4 text-xl font-semibold">Statistics</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-2xl font-bold">
+                  {mockStats.completedRoadmaps}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Completed Roadmaps
+                </p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold">
+                  {mockStats.inProgressRoadmaps}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  In Progress Roadmaps
+                </p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold">
+                  {mockStats.totalHoursLearned}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Total Hours Learned
+                </p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{mockStats.streakDays}</p>
+                <p className="text-sm text-muted-foreground">Day Streak</p>
+              </div>
             </div>
+          </Card>
+        </div>
 
-            <div className="p-4 bg-primary/10 rounded-lg">
-              <h3 className="text-sm font-medium text-muted-foreground">
-                Day Streak
-              </h3>
-              <p className="text-2xl font-bold mt-1">
-                {mockStats.streakDays}
-              </p>
-            </div>
-          </div>
-        </Card>
+        <div className="space-y-6">
+          <Card className="p-6">
+            <h3 className="mb-4 text-xl font-semibold">Active Roadmaps</h3>
+            {/* Add roadmap progress cards here */}
+          </Card>
+
+          <Card className="p-6">
+            <h3 className="mb-4 text-xl font-semibold">Recent Activity</h3>
+            {/* Add activity feed here */}
+          </Card>
+        </div>
       </div>
     </div>
   );
